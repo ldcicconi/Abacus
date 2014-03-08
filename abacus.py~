@@ -1,0 +1,69 @@
+import socket
+import time
+
+Server = "irc.freenode.net"
+Channel = "#OfficialWutang"
+BotNick = "Abacus_"
+BotPassword = "wrapper"
+Password = "@#%2325!!"
+IRCsock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+def Ping():
+	ircsock.send("PONG :Pong\n")
+
+def SendMsg(message):
+	ircsock.send("PRIVMSG " + Channel + " :" + message + "\n")
+
+def SendUsrMsg(user, message):
+	ircsock.send("PRIVMSG " + user + " :" + message + "\n")
+
+def JoinChan(chan, Pass):
+	ircsock.send("JOIN " + chan + " " + Pass + "\n")
+
+class Count:
+	def __init__(self):
+		self.btctotal=0.0
+		self.starttime=time.time()
+		SendMsg("Get ready to count our bitcoin! Reply with !btc plus the number you hold")
+	
+	def add(self, btc, username):
+		self.btctotal+=btc
+		SendMsg(username + " added " + str(btc) + " btc")
+	def final(self):
+		SendMsg("Count is over! Total bitcoin: " + str(self.btctotal))
+	
+ircsock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+ircsock.connect((Server, 6667))
+ircsock.send("USER " + BotNick + " " + BotNick + " " + BotNick + " :This bot is a bot\n")
+ircsock.send("NICK " + BotNick + "\n")
+SendUsrMsg("NickServ", "identify " + BotPassword)
+
+ircsock.send("JOIN " + Channel + " " + Password + "\n")
+x = None
+while True:
+	ircmsg = ircsock.recv(2048)
+	ircmsg = ircmsg.strip("\n\r")
+
+	username = (((ircmsg.split())[0])[1:]).split("!", 1)[0]
+
+	if (ircmsg.find(":!COUNT") != -1):
+		x = Count()
+
+	if x is not None and (ircmsg.find(":!END") != -1):
+		x.final()
+		x = None
+	
+	if x is not None and (ircmsg.find(":!btc") != -1):
+		split = ircmsg.split()
+		flare = (split[3])[1:]
+		print flare
+		try:
+			num = float(split[4])
+		except ValueError:
+			pass
+		else:
+			x.add(num, username)
+
+	if ircmsg.find("PING :") != -1:
+		Ping()
+ 
